@@ -20,6 +20,8 @@ class PM25_LSTM_Regression(torch.nn.Module):
         num_layers: int,
         bidirectional: bool,
         intput_size:int,
+        intput_data_length :int,
+        output_size:int,
         batch_size:int
     ) -> None:
         
@@ -27,12 +29,13 @@ class PM25_LSTM_Regression(torch.nn.Module):
         self.num_layers = num_layers
         self.bidirectional = bidirectional
         self.intput_size = intput_size
+        self.intput_data_length = intput_data_length
+        self.output_size = output_size
         self.batch_size = batch_size
         
         super(PM25_LSTM_Regression, self).__init__()
         
         # TODO: model architecture
-        # CNN
 
         self.lstm = torch.nn.LSTM(
             input_size = intput_size,
@@ -45,13 +48,13 @@ class PM25_LSTM_Regression(torch.nn.Module):
         self.seq = nn.Sequential(
             torch.nn.ReLU(),
             #torch.nn.Dropout(0.1),
-            torch.nn.Linear(2*32, 32),
+            torch.nn.Linear(2 * self.hidden_size * self.intput_data_length, 32),
             torch.nn.ReLU(),
             #torch.nn.Dropout(0.1),
             torch.nn.Linear(32, 16),
             torch.nn.ReLU(),
             #torch.nn.Dropout(0.1),
-            torch.nn.Linear(16, 1),
+            torch.nn.Linear(16, self.output_size),
             #torch.nn.ReLU(),
             #torch.nn.Softmax(dim=1),
         )
@@ -68,8 +71,8 @@ class PM25_LSTM_Regression(torch.nn.Module):
 
         batchSize = batch.shape[0]
 
-        h0 = torch.randn(self.num_layers * (2 if self.bidirectional else 1), self.batch_size).requires_grad_().to(device)
-        c0 = torch.randn(self.num_layers * (2 if self.bidirectional else 1), self.batch_size).requires_grad_().to(device)
+        h0 = torch.randn(self.num_layers * (2 if self.bidirectional else 1), batchSize, self.hidden_size).requires_grad_().to(device)
+        c0 = torch.randn(self.num_layers * (2 if self.bidirectional else 1), batchSize, self.hidden_size).requires_grad_().to(device)
 
 
         L, (hn, Cn) = self.lstm(batch, (h0, c0))
@@ -77,5 +80,5 @@ class PM25_LSTM_Regression(torch.nn.Module):
         flatten = torch.flatten(L, start_dim=1)
         ans = self.seq(flatten)
         
-        return ans.reshape(batchSize)
+        return ans.reshape(batchSize,self.output_size)
 

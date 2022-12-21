@@ -27,7 +27,18 @@ class PM25Dataset(Dataset):
     
     def __getitem__(self, index) -> Dict:
         instance = self.data.iloc[index]
-        return np.array(instance)
+        
+        SiteId = instance.name[0]
+        Longitude = instance.name[1]
+        Latitude = instance.name[2]
+        PM25 = instance[3:]
+        
+        data = list()
+        for val in PM25:
+            Datadict = {'Longitude': Longitude, 'Latitude': Latitude, 'PM25': val}
+            data.append(Datadict)
+        
+        return data
     
 
     @property
@@ -37,6 +48,14 @@ class PM25Dataset(Dataset):
 
     def collate_fn(self,samples):
 
-        return samples
+        #batch = [np.array(list(data.values())) for data in samples]
+
+        batch = []
+        for sample in samples :
+            temp = [np.array(list(data.values())) for data in sample]
+            batch.append(temp)
+        
+
+        return np.array(batch)
 
 
